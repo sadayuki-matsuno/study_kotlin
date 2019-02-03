@@ -9,7 +9,7 @@ data class Repo (
     val private: Boolean,
     val owner: Owner,
     val fork: Boolean,
-    val size: Int? = 0,
+    val size: Int = 0,
     @Json(name = "stargazers_count") val star: Int = 0,
     @Json(name = "open_issues") val openIssues: Int = 0
 )
