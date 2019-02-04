@@ -1,57 +1,42 @@
 package com.example.study_kotiln
 
-import android.R
 import android.content.Context
-import android.support.v7.app.AppCompatActivity
 import android.widget.ArrayAdapter
 import android.widget.ListView
+import android.widget.Toast
 import com.beust.klaxon.Klaxon
 import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.result.Result
-import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 
-class Fetch  {
+class Fetch {
     // context -> https://stackoverflow.com/questions/50171998/how-to-use-this-and-context-in-other-class-android-kotlin
-    fun fetch(context: Context, reposView: ListView, url: String) {
-        Fuel.get(url).response { request, response, result ->
-            when (result) {
+    fun fetchGithubRepos (context: Context?, reposView: ListView ) =  GlobalScope.launch(Dispatchers.Main)  {
+        println("start fetch repos")
+        val url = "https://api.github.com/users/sadayuki-matsuno/repos"
+        async(Dispatchers.Default) {Fuel.get(url).response()}.await().let {
+            when (it.third) {
                 is Result.Success -> {
                     // レスポンスボディを表示
-                    val repos = Klaxon().parseArray<Repo>(String(response.data))
-                    println("非同期処理の結果：")
-                    println(Klaxon().toJsonString(repos))
+                    val repos = Klaxon().parseArray<Repo>(String(it.second.data))
                     if (repos != null) {
-                        val nameList =  repos.map{it.name}
-                        println(nameList)
-                        val adapter = ArrayAdapter<String>(context, android.R.layout.simple_list_item_1, nameList)
+                        val adapter = ArrayAdapter<String>(context, android.R.layout.simple_list_item_1, repos.map{it.name})
                         reposView.adapter = adapter
+                        reposView.setOnItemClickListener { parent, view, position, id ->
+                            Toast.makeText(context, repos[position].fullName, Toast.LENGTH_LONG).show()
+                        }
+
                     }
                 }
                 is Result.Failure -> {
-                    println(request)
+                    println(it.first)
                     println("通信に失敗しました。")
                 }
             }
         }
-        // val (request, response, result ) = Fuel.get(url).response()
-        // println(request)
-        // println(response)
-        // when (result) {
-        //     is Result.Success -> {
-        //         // レスポンスボディを表示
-        //         val repos = Klaxon().parseArray<Repo>(String(response.data))
-        //         println("非同期処理の結果：")
-        //         println(Klaxon().toJsonString(repos))
-        //         return repos
-        //     }
-        //     is Result.Failure -> {
-        //         println(request)
-        //         println("通信に失敗しました。")
-        //         return null
-        //     }
-        //     else -> {
-        //         println(result)
-        //         return null
-        //     }
+        println("end fetch repos")
     }
 }
